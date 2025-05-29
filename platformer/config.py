@@ -1,0 +1,8 @@
+# config.py
+
+WIDTH = 640
+HEIGHT = 480
+FPS = 60
+PLAYER_VEL = 5
+
+BG_COLOR = (255, 255, 255)
