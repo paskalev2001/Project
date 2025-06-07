@@ -36,8 +36,9 @@ class MenuPanel(wx.Panel):
         # Add stretch to center buttons vertically
         self.sizer.AddStretchSpacer(1)
         btn_play = wx.Button(self, label="Play", size=(200, 50))
-        btn_load = wx.Button(self, label="Load Level (Coming Soon)", size=(200, 50))
-        btn_load.Enable(False)
+        btn_load = wx.Button(self, label="Load Level", size=(200, 50))
+        btn_load.Enable(True)
+        btn_load.Bind(wx.EVT_BUTTON, self.OnLoadLevel)
         btn_settings = wx.Button(self, label="Settings", size=(200, 50))
         btn_quit = wx.Button(self, label="Quit", size=(200, 50))
         for btn in [btn_play, btn_load, btn_settings, btn_quit]:
@@ -47,6 +48,18 @@ class MenuPanel(wx.Panel):
         btn_play.Bind(wx.EVT_BUTTON, self.OnPlay)
         btn_settings.Bind(wx.EVT_BUTTON, self.OnSettings)
         btn_quit.Bind(wx.EVT_BUTTON, self.OnQuit)
+
+    def OnLoadLevel(self, event):
+        with wx.FileDialog(self, "Open CSV Level", wildcard="CSV files (*.csv)|*.csv",
+                        style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return     # the user changed their mind
+
+            path = fileDialog.GetPath()
+            self.GetParent().Hide()
+            # Call main.py with level file as argument
+            os.system(f"{sys.executable} main.py \"{path}\"")
+            self.GetParent().Close()
 
     def OnPaint(self, event):
         dc = wx.AutoBufferedPaintDC(self)

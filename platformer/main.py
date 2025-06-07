@@ -1,10 +1,12 @@
 # main.py
 
+import sys
 import pygame
 from config import WIDTH, HEIGHT, FPS, BG_COLOR, PLAYER_VEL
 from utils import load_sprite_sheets, get_block
 from player import Player
 from objects import Block, Fire
+from level_loader import load_level_csv
 
 def get_background(name):
     """
@@ -110,7 +112,7 @@ def handle_move(player, objects):
         if obj and getattr(obj, 'name', None) == "fire":
             player.make_hit()
 
-def main():
+def main(level_file=None):
     """
     Main game loop. Initializes pygame, sets up the scene, processes events,
     updates the player and objects, draws everything, and manages camera scrolling.
@@ -125,22 +127,31 @@ def main():
 
     # Set up game world objects
     block_size = 96
+    
+    # If level_file is specified, load that level. Else, use a default.
+    if level_file is not None:
+        player, objects = load_level_csv(level_file)
+        # Make sure all fire objects are ON
+        for obj in objects:
+            if isinstance(obj, Fire):
+                obj.on()
+        
 
-    # Create a floor that covers the width of the level
-    floor = [Block(i * block_size, HEIGHT - block_size, block_size)
-             for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
-    player = Player(100, 100, 50, 50)
+    else:
+        # Create a floor that covers the width of the level
+        floor = [Block(i * block_size, HEIGHT - block_size, block_size)
+                for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
+        player = Player(100, 100, 50, 50)
 
-    # Add a fire hazard and some extra blocks
-    fire = Fire(200, HEIGHT - block_size - 64, 16, 32)
-    fire.on()
+        # Add a fire hazard and some extra blocks
+        fire = Fire(200, HEIGHT - block_size - 64, 16, 32)
 
-    objects = [
-        *floor,
-        Block(0, HEIGHT - block_size * 2, block_size),
-        Block(block_size * 3, HEIGHT - block_size * 4, block_size),
-        fire
-    ]
+        objects = [
+            *floor,
+            Block(0, HEIGHT - block_size * 2, block_size),
+            Block(block_size * 3, HEIGHT - block_size * 4, block_size),
+            fire
+        ]
 
     # Camera/scrolling offsets
     offset_x = 0
@@ -163,7 +174,9 @@ def main():
 
         # Update player and hazard (fire) animations and movement
         player.loop(FPS)
-        fire.loop()
+        for obj in objects:
+            if isinstance(obj, Fire):
+                obj.loop()
 
         # Handle user movement and object collisions
         handle_move(player, objects)
@@ -194,4 +207,7 @@ def main():
     quit()
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()
