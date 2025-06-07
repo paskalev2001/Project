@@ -5,9 +5,24 @@ from os import listdir
 from os.path import isfile, join
 
 def flip(sprites):
+    """
+    Flips each sprite horizontally.
+    :param sprites: List of Pygame surfaces to flip
+    :return: List of flipped surfaces
+    """
     return [pygame.transform.flip(sprite, True, False) for sprite in sprites]
 
 def load_sprite_sheets(dir1, dir2, width, height, direction=False):
+    """
+    Loads and splits a spritesheet into individual sprites.
+    Optionally generates left/right versions by flipping.
+    :param dir1: Main asset directory (e.g. 'MainCharacters')
+    :param dir2: Subdirectory (e.g. 'NinjaFrog')
+    :param width: Width of each sprite frame
+    :param height: Height of each sprite frame
+    :param direction: If True, generate left/right animations
+    :return: Dictionary of lists of sprites
+    """
     path = join("assets", dir1, dir2)
     images = [f for f in listdir(path) if isfile(join(path, f))]
     all_sprites = {}
@@ -31,6 +46,11 @@ def load_sprite_sheets(dir1, dir2, width, height, direction=False):
     return all_sprites
 
 def get_block(size):
+    """
+    Loads and returns a terrain block sprite of a given size.
+    :param size: Size of the block (square)
+    :return: Scaled block surface
+    """
     from os.path import join
     path = join("assets", "Terrain", "Terrain.png")
     image = pygame.image.load(path).convert_alpha()

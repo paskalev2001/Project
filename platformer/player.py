@@ -5,12 +5,20 @@ from utils import load_sprite_sheets
 from config import PLAYER_VEL, FPS
 
 class Player(pygame.sprite.Sprite):
+    """
+    The Player class represents the main character.
+    Handles movement, jumping, sprite animation, collision, and drawing.
+    """
     COLOR = (255, 0, 0)
     GRAVITY = 0.98
     SPRITES = None  # Will be set after pygame.display is initialized
     ANIMATION_DELAY = 3
 
     def __init__(self, x, y, width, height):
+        """
+        Initializes the player at (x, y) with specified width and height.
+        Loads sprites if not already loaded.
+        """
         super().__init__()
         if Player.SPRITES is None:
             Player.SPRITES = load_sprite_sheets("MainCharacters", "NinjaFrog", 32, 32, True)
@@ -25,6 +33,9 @@ class Player(pygame.sprite.Sprite):
         self.hit = False
         self.hit_count = 0
     def jump(self):
+        """
+        Makes the player jump if allowed (double jump).
+        """
         self.y_vel = -self.GRAVITY * 8
         self.animation_count = 0
         self.jump_count += 1
@@ -32,26 +43,41 @@ class Player(pygame.sprite.Sprite):
             self.fall_count = 0
 
     def make_hit(self):
+        """
+        Sets the player's hit status (for collision with hazards).
+        """
         self.hit = True
         self.hit_count = 0
 
     def move(self, dx, dy):
+        """
+        Moves the player by (dx, dy).
+        """
         self.rect.x += dx
         self.rect.y += dy
 
     def move_left(self, vel):
+        """
+        Sets horizontal velocity for moving left.
+        """
         self.x_vel = -vel
         if self.direction != "left":
             self.direction = "left"
             self.animation_count = 0
 
     def move_right(self, vel):
+        """
+        Sets horizontal velocity for moving right.
+        """
         self.x_vel = vel
         if self.direction != "right":
             self.direction = "right"
             self.animation_count = 0
 
     def loop(self, fps):
+        """
+        Updates player's movement, gravity, hit status, and sprite animation each frame.
+        """
         self.y_vel += min(0.98, (self.fall_count / fps) * self.GRAVITY)
         self.move(self.x_vel, self.y_vel)
 
@@ -65,15 +91,24 @@ class Player(pygame.sprite.Sprite):
         self.update_sprite()
 
     def landed(self):
+        """
+        Resets counters when player lands on ground.
+        """
         self.fall_count = 0
         self.y_vel = 0
         self.jump_count = 0
 
     def hit_head(self):
+        """
+        Handles head collision with a block (reverse velocity).
+        """
         self.fall_count = 0
         self.y_vel *= -1
 
     def update_sprite(self):
+        """
+        Selects and updates the current sprite frame based on movement state.
+        """
         sprite_sheet = "idle"
 
         if self.hit:
@@ -96,8 +131,14 @@ class Player(pygame.sprite.Sprite):
         self.update()
 
     def update(self):
+        """
+        Updates the player's rect and mask based on the current sprite.
+        """
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
         self.mask = pygame.mask.from_surface(self.sprite)
 
     def draw(self, win, offset_x, offset_y):
+        """
+        Draws the player on the window, offset by camera.
+        """
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
