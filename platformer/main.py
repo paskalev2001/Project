@@ -2,11 +2,15 @@
 
 import sys
 import pygame
+import pygame.time
+import wx
 from config import WIDTH, HEIGHT, FPS, BG_COLOR, PLAYER_VEL
 from utils import load_sprite_sheets, get_block
 from player import Player
 from objects import Block, Fire
 from level_loader import load_level_csv
+import os
+import thread
 
 def get_background(name):
     """
@@ -23,6 +27,17 @@ def get_background(name):
             pos = (i * width, j * height)
             tiles.append(pos)
     return tiles, image
+
+def draw_health_bar(window, health, max_health):
+    """Draws a health bar at the top left of the screen."""
+    bar_width = 200
+    bar_height = 25
+    x, y = 20, 20
+    fill = (health / max_health) * bar_width
+    outline_rect = pygame.Rect(x, y, bar_width, bar_height)
+    fill_rect = pygame.Rect(x, y, fill, bar_height)
+    pygame.draw.rect(window, (255, 0, 0), fill_rect)
+    pygame.draw.rect(window, (0, 0, 0), outline_rect, 2)
 
 def draw(window, background, bg_image, player, objects, offset_x, offset_y):
     """
@@ -42,6 +57,7 @@ def draw(window, background, bg_image, player, objects, offset_x, offset_y):
         obj.draw(window, offset_x, offset_y)
 
     player.draw(window, offset_x, offset_y)
+    draw_health_bar(window, player.health, player.MAX_HEALTH)
     pygame.display.update()
 
 def handle_vertical_collision(player, objects, dy):
@@ -107,10 +123,23 @@ def handle_move(player, objects):
     vertical_collide = handle_vertical_collision(player, objects, player.y_vel)
     to_check = [collide_left, collide_right, *vertical_collide]
 
+    fire_touched = False  # track if player is touching fire
+
     # If player collides with fire, set hit state
     for obj in to_check:
         if obj and getattr(obj, 'name', None) == "fire":
             player.make_hit()
+            fire_touched = True
+
+    if fire_touched:
+        current_time = pygame.time.get_ticks()  # milliseconds since pygame.init()
+        if current_time - player.last_fire_damage_time >= player.DAMAGE_INTERVAL:
+            player.take_damage(1)  # or whatever amount per tick
+            player.last_fire_damage_time = current_time
+    else:
+        # Reset timer if player is not on fire
+        # (so they take damage immediately next time they touch)
+        player.last_fire_damage_time = 0
 
 def main(level_file=None):
     """
@@ -203,8 +232,49 @@ def main(level_file=None):
         ):
             offset_y += player.y_vel
 
+        if player.health <= 0:
+            # Game Over logic (restart, quit, etc)
+            # print("Game Over!")
+            # run = False
+            app = wx.App(False)
+            frame = DeathScreenFrame()
+            frame.Show()
+            app.MainLoop()
+
     pygame.quit()
     quit()
+
+class DeathScreenPanel(wx.Panel):
+    def __init__(self, parent, width, height):
+        super().__init__(parent, size=(width,height))
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.sizer)
+        self.AddButtons()
+
+    def AddButtons(self):
+        self.sizer.AddStretchSpacer(1)
+        btn_toMenu = wx.Button(self, label="To menu", size=(200, 50))
+        btn_quit = wx.Button(self, label="Quit", size=(200, 50))
+        btn_toMenu.Bind(wx.EVT_BUTTON, self.OnToMenu)
+        btn_quit.Bind(wx.EVT_BUTTON, self.OnQuit)
+        self.sizer.Add(btn_toMenu, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        self.sizer.Add(btn_quit, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        self.sizer.AddStretchSpacer(1)
+
+    def OnQuit(self, e):
+        sys.exit()
+
+    def OnToMenu(self, e):
+        os.system(f"{sys.executable} menu.py")
+        self.Close()
+
+class DeathScreenFrame(wx.Frame):
+    def __init__(self):
+        width, height = 360, 240
+        super().__init__(None, title="You died.", size=(width, height),
+                         style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        panel = DeathScreenPanel(self, width, height)
+        self.Center()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

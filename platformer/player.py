@@ -9,6 +9,8 @@ class Player(pygame.sprite.Sprite):
     The Player class represents the main character.
     Handles movement, jumping, sprite animation, collision, and drawing.
     """
+    MAX_HEALTH = 16
+    DAMAGE_INTERVAL = 1000  # milliseconds
     COLOR = (255, 0, 0)
     GRAVITY = 0.98
     SPRITES = None  # Will be set after pygame.display is initialized
@@ -32,6 +34,18 @@ class Player(pygame.sprite.Sprite):
         self.jump_count = 0
         self.hit = False
         self.hit_count = 0
+        self.health = self.MAX_HEALTH
+        self.last_fire_damage_time = 0 
+
+    def take_damage(self, amount):
+        """Reduces health and clamps at zero."""
+        self.health = max(0, self.health - amount)
+        # Optional: Add respawn/death logic here
+
+    def heal(self, amount):
+        """Increases health but doesn't exceed max."""
+        self.health = min(self.MAX_HEALTH, self.health + amount)
+
     def jump(self):
         """
         Makes the player jump if allowed (double jump).
