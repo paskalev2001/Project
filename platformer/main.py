@@ -233,48 +233,31 @@ def main(level_file=None):
             offset_y += player.y_vel
 
         if player.health <= 0:
-            # Game Over logic (restart, quit, etc)
-            # print("Game Over!")
-            # run = False
-            app = wx.App(False)
-            frame = DeathScreenFrame()
-            frame.Show()
-            app.MainLoop()
+            pygame.quit()
+            show_game_over_dialog()
+            return  # or break/run = False, as appropriate
 
     pygame.quit()
     quit()
 
-class DeathScreenPanel(wx.Panel):
-    def __init__(self, parent, width, height):
-        super().__init__(parent, size=(width,height))
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.sizer)
-        self.AddButtons()
-
-    def AddButtons(self):
-        self.sizer.AddStretchSpacer(1)
-        btn_toMenu = wx.Button(self, label="To menu", size=(200, 50))
-        btn_quit = wx.Button(self, label="Quit", size=(200, 50))
-        btn_toMenu.Bind(wx.EVT_BUTTON, self.OnToMenu)
-        btn_quit.Bind(wx.EVT_BUTTON, self.OnQuit)
-        self.sizer.Add(btn_toMenu, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-        self.sizer.Add(btn_quit, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-        self.sizer.AddStretchSpacer(1)
-
-    def OnQuit(self, e):
-        sys.exit()
-
-    def OnToMenu(self, e):
-        os.system(f"{sys.executable} menu.py")
-        self.Close()
-
-class DeathScreenFrame(wx.Frame):
-    def __init__(self):
-        width, height = 360, 240
-        super().__init__(None, title="You died.", size=(width, height),
-                         style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
-        panel = DeathScreenPanel(self, width, height)
-        self.Center()
+def show_game_over_dialog():
+    # wx must run on main thread! 
+    app = wx.App(False)
+    dialog = wx.MessageDialog(
+        None,
+        "Game Over!\nWhat do you want to do?",
+        "Game Over",
+        wx.YES_NO | wx.ICON_QUESTION
+    )
+    dialog.SetYesNoLabels("Return to Main Menu", "Exit Game")
+    result = dialog.ShowModal()
+    dialog.Destroy()
+    if result == wx.ID_YES:
+        # Return to main menu
+        python = sys.executable
+        os.execl(python, python, "menu.py")  # assumes menu.py is in same folder
+    else:
+        sys.exit(0)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
