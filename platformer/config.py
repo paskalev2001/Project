@@ -1,7 +1,7 @@
 # config.py
 
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1024
+HEIGHT = 768
 FPS = 60
 PLAYER_VEL = 5
 

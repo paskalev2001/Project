@@ -8,6 +8,7 @@ from config import WIDTH, HEIGHT, FPS, BG_COLOR, PLAYER_VEL
 from utils import load_sprite_sheets, get_block
 from player import Player
 from objects import Block, Fire
+from enemy import Enemy
 from level_loader import load_level_csv
 import os
 import thread
@@ -131,6 +132,10 @@ def handle_move(player, objects):
             player.make_hit()
             fire_touched = True
 
+        if isinstance(obj, Enemy):
+            player.make_hit()
+            fire_touched = True
+
     if fire_touched:
         current_time = pygame.time.get_ticks()  # milliseconds since pygame.init()
         if current_time - player.last_fire_damage_time >= player.DAMAGE_INTERVAL:
@@ -171,6 +176,7 @@ def main(level_file=None):
         floor = [Block(i * block_size, HEIGHT - block_size, block_size)
                 for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
         player = Player(100, 100, 50, 50)
+        enemy = Enemy(x=300, y=HEIGHT - 96*2, width=40, height=40, left_bound=200, right_bound=500, speed=2)
 
         # Add a fire hazard and some extra blocks
         fire = Fire(200, HEIGHT - block_size - 64, 16, 32)
@@ -179,7 +185,8 @@ def main(level_file=None):
             *floor,
             Block(0, HEIGHT - block_size * 2, block_size),
             Block(block_size * 3, HEIGHT - block_size * 4, block_size),
-            fire
+            fire,
+            enemy
         ]
 
     # Camera/scrolling offsets
@@ -206,6 +213,8 @@ def main(level_file=None):
         for obj in objects:
             if isinstance(obj, Fire):
                 obj.loop()
+            if isinstance(obj, Enemy):
+                obj.move()
 
         # Handle user movement and object collisions
         handle_move(player, objects)
