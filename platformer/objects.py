@@ -2,6 +2,7 @@
 
 import pygame
 from utils import get_block, load_sprite_sheets
+from os.path import join
 
 class Object(pygame.sprite.Sprite):
     """
@@ -22,6 +23,23 @@ class Object(pygame.sprite.Sprite):
         """
         Draw the object on the window, offset by camera.
         """
+        win.blit(self.image, (self.rect.x - offset_x, self.rect.y - offset_y))
+
+class Flag(pygame.sprite.Sprite):
+    """
+    The level finish/cup flag.
+    """
+    def __init__(self, x, y, size=48):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, size, size)
+        # Load the flag image
+        path = join("assets", "Items", "Checkpoints", "End", "End (idle).png")
+        image = pygame.image.load(path).convert_alpha()
+        # Scale if needed
+        self.image = pygame.transform.scale(image, (size, size))
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self, win, offset_x, offset_y):
         win.blit(self.image, (self.rect.x - offset_x, self.rect.y - offset_y))
 
 class Block(Object):

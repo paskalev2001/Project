@@ -7,8 +7,9 @@ import wx
 from config import WIDTH, HEIGHT, FPS, BG_COLOR, PLAYER_VEL
 from utils import load_sprite_sheets, get_block
 from player import Player
-from objects import Block, Fire
+from objects import Block, Fire, Flag
 from enemy import Enemy
+from collectibles import Coin
 from level_loader import load_level_csv
 import os
 import thread
@@ -40,7 +41,13 @@ def draw_health_bar(window, health, max_health):
     pygame.draw.rect(window, (255, 0, 0), fill_rect)
     pygame.draw.rect(window, (0, 0, 0), outline_rect, 2)
 
-def draw(window, background, bg_image, player, objects, offset_x, offset_y):
+def draw_score(window, score):
+    font = pygame.font.SysFont("Arial", 32, bold=True)
+    score_text = font.render(f"Score: {score}", True, (255, 223, 0))
+    text_rect = score_text.get_rect(topright=(WIDTH - 20, 20))
+    window.blit(score_text, text_rect)
+
+def draw(window, background, bg_image, player, objects, offset_x, offset_y, score):
     """
     Draws the entire game scene (background, objects, player) on the window.
     :param window: The pygame display window.
@@ -58,6 +65,7 @@ def draw(window, background, bg_image, player, objects, offset_x, offset_y):
         obj.draw(window, offset_x, offset_y)
 
     player.draw(window, offset_x, offset_y)
+    draw_score(window, score)
     draw_health_bar(window, player.health, player.MAX_HEALTH)
     pygame.display.update()
 
@@ -147,6 +155,7 @@ def handle_move(player, objects):
         player.last_fire_damage_time = 0
 
 def main(level_file=None):
+    score = 0
     """
     Main game loop. Initializes pygame, sets up the scene, processes events,
     updates the player and objects, draws everything, and manages camera scrolling.
@@ -219,6 +228,23 @@ def main(level_file=None):
         # Handle user movement and object collisions
         handle_move(player, objects)
 
+        coins_collected = []
+        for obj in objects:
+            if isinstance(obj, Coin):
+                if player.rect.colliderect(obj.rect):
+                    coins_collected.append(obj)
+                    score += 1
+            if isinstance(obj, Flag):
+                if player.rect.colliderect(obj.rect):
+                    pygame.quit()
+                    show_win_dialog()
+                    return 
+
+        for coin in coins_collected:
+            objects.remove(coin)
+
+    
+
         # Draw the current frame
         draw(
             window=game_window,
@@ -228,6 +254,7 @@ def main(level_file=None):
             objects=objects,
             offset_x=offset_x,
             offset_y=offset_y,
+            score=score
         )
         # Handle horizontal camera scrolling
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or (
@@ -262,9 +289,32 @@ def show_game_over_dialog():
     result = dialog.ShowModal()
     dialog.Destroy()
     if result == wx.ID_YES:
-        # Return to main menu
         python = sys.executable
-        os.execl(python, python, "menu.py")  # assumes menu.py is in same folder
+        os.execl(python, python, "menu.py")
+    else:
+        sys.exit(0)
+
+def show_win_dialog():
+    app = wx.App(False)
+    dialog = wx.MessageDialog(
+        None,
+        "Congratulations! You win!\nLoad another level?",
+        "Level Complete",
+        wx.YES_NO | wx.ICON_INFORMATION
+    )
+    dialog.SetYesNoLabels("Load Level", "Quit")
+    result = dialog.ShowModal()
+    dialog.Destroy()
+    if result == wx.ID_YES:
+        # Open file dialog to select next CSV level
+        with wx.FileDialog(None, "Open CSV Level", wildcard="CSV files (*.csv)|*.csv",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                sys.exit(0)
+            path = fileDialog.GetPath()
+            print(path)
+            python = sys.executable
+            os.execl(python, sys.executable, "main.py", f"\"{path}\"")
     else:
         sys.exit(0)
 

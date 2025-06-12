@@ -1,9 +1,10 @@
 # level_loader.py
 
 import csv
-from objects import Block, Fire
+from objects import Block, Fire, Flag
 from player import Player
 from enemy import Enemy
+from collectibles import Coin
 from config import WIDTH, HEIGHT
 
 def load_level_csv(filename, block_size=96):
@@ -41,6 +42,10 @@ def load_level_csv(filename, block_size=96):
                 width = int(enemy_data[3])
                 height = int(enemy_data[4])
                 objects.append(Enemy(x, y, width, height, left_bound, right_bound, speed))
+            elif cell == 'C':
+                objects.append(Coin(x, y, 24))
+            elif cell == 'G':
+                objects.append(Flag(x, y, 48))
             # Add more symbols as you add more objects!
             
 
